@@ -1,0 +1,701 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Banka_Otomasyonu
+{
+    public partial class btn_parayatir : Form
+    {
+        public btn_parayatir()
+        {
+            InitializeComponent();
+
+            
+        }
+        Connection baglan = new Connection();
+
+        public void hesap_Cagır()
+        {
+            SqlCommand hesap_listele = new SqlCommand(@"select * FROM Hesaplar where Musteri_ID = (select ID from Giris_Bilgisi where Ad=@p1 and Tür=2)", baglan.sql());
+
+            hesap_listele.Parameters.AddWithValue("@p1", lbl_customerno.Text);
+
+            SqlDataReader dr;
+
+            dr = hesap_listele.ExecuteReader();
+
+
+            while (dr.Read())
+            {
+                cbx_hesaplar.Items.Add(dr["Hesap_No"]);
+            }
+        }
+
+        public void HesapTemizle()
+        {
+            cbx_hesaplar.Items.Clear();
+        }
+
+        
+        public void Hesap_Bakiye()
+        {
+            
+            SqlCommand hesap_bakiye = new SqlCommand(@"select * FROM Hesaplar where Musteri_ID = (select ID from Giris_Bilgisi where Ad=@p1  and Tür=2) and Hesap_No=@p2", baglan.sql());
+            hesap_bakiye.Parameters.AddWithValue("@p1", lbl_customerno.Text);
+            hesap_bakiye.Parameters.AddWithValue("@p2", cbx_hesaplar.SelectedItem.ToString());
+
+            SqlDataReader dr;
+
+            dr = hesap_bakiye.ExecuteReader();
+
+
+            while (dr.Read())
+            {
+               lbl_kullanıcıhesapbakiye.Text = dr["Bakiye"].ToString();
+                lbl_gider.Text = dr["Gider"].ToString();
+                lbl_gelir.Text = dr["Gelir"].ToString();
+            }
+
+
+            string.Concat(lbl_kullanıcıhesapbakiye.Text, " ₺");
+        }
+
+        double bakiye = 750;
+        public void IslemSıra()
+        {
+           
+
+            if (tabControl1.SelectedTab == tp_havale)
+            {
+                if (tp_havale.Text == "Havale")
+                {
+                    lbl_ıslemsıra.Text = "1";
+                }
+            }
+
+            if (tabControl1.SelectedTab == tp_parayatırma)
+            {
+                if (tp_parayatırma.Text == "Para Yatırma")
+                {
+                    lbl_ıslemsıra.Text = "2";
+                }
+            }
+            if (tabControl1.SelectedTab == tp_paracekme)
+            {
+                if (tp_paracekme.Text == "Para Çekme")
+                {
+                    lbl_ıslemsıra.Text = "3";
+                }
+            }
+            
+        }
+
+        public void IslemSıraParametre(string deger)
+        {
+            switch (deger)
+            {
+                case "1":
+                    tabControl1.SelectedTab = tp_havale;
+                    break;
+
+                case "2":
+                    tabControl1.SelectedTab = tp_parayatırma;
+                    break;
+
+                case "3":
+                    tabControl1.SelectedTab = tp_paracekme;
+                    break;
+                default:
+                    break;
+            }
+
+
+        }
+
+        public string customerno { get; set; }
+        
+        void PanelChange(Panel open,Panel close)
+
+        {
+            open.Visible = true;
+            close.Visible = false;
+        }
+        void PanelAc(Panel open)
+
+        {
+            open.Visible = true;
+        }
+        private void Customer_form_Load_1(object sender, EventArgs e)
+        {
+            //this.Icon.Dispose();
+
+            lbl_customerno.Text = customerno;
+
+            lbl_cizgi.AutoSize = false;
+
+            lbl_cizgi.Width = 600;
+
+            lbl_cizgi.Height = 2;
+
+            lbl_cizgi.BorderStyle = BorderStyle.Fixed3D;
+
+            MaximizeBox = false;
+
+            lbl_bakiye.Text = string.Concat(bakiye.ToString(), " ₺");
+            IslemSıra();
+
+            PanelChange(pnl_menu, pnl_kurhesapla);
+        }
+
+        private void tsm_kur_hesapla_Click(object sender, EventArgs e)
+        {
+            PanelChange(pnl_menu, pnl_islemler);
+            cbx_solkur.Text = "USD";
+            cbx_sagkur.Text = "TL";
+            PanelAc(pnl_kurhesapla);
+
+         
+        }
+
+        private void txt_kurgiris_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar);
+        }
+
+        private void btn_kurhesapla_Click(object sender, EventArgs e)
+        {
+            #region KUR USD
+            if (cbx_solkur.SelectedItem.ToString() == "USD")
+            {
+
+                if (cbx_sagkur.SelectedItem.ToString() == "TL")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 7.04;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "USD")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 1;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "EUR")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 1.35;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "GBP")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 0.65;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+            }
+            #endregion
+
+            #region KUR EUR
+
+            if (cbx_solkur.SelectedItem.ToString() == "EUR")
+            {
+
+                if (cbx_sagkur.SelectedItem.ToString() == "TL")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 8.53;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "USD")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 1.15;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "EUR")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 1;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "GBP")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 0.80;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+            }
+            #endregion
+
+            #region KUR GBP
+
+            if (cbx_solkur.SelectedItem.ToString() == "GBP")
+            {
+
+                if (cbx_sagkur.SelectedItem.ToString() == "TL")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 9.40;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "USD")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 1.45;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "EUR")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 1.26;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+
+                if (cbx_sagkur.SelectedItem.ToString() == "GBP")
+                {
+                    double kur = 0;
+                    double a = Convert.ToDouble(txt_kurgiris.Text);
+                    kur = a * 1;
+
+                    txt_hesaplanacak_kur.Text = kur.ToString();
+
+                }
+            }
+            #endregion
+        }
+
+        private void tsm_islem_tipi_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        public void tsm_paracek_Click(object sender, EventArgs e)
+        {
+            lbl_hesapcizgi.AutoSize = false;
+
+            lbl_hesapcizgi.Width = 600;
+
+            lbl_hesapcizgi.Height = 2;
+
+            lbl_hesapcizgi.BorderStyle = BorderStyle.Fixed3D;
+
+            
+            IslemSıraParametre("3");
+            HesapTemizle();
+            hesap_Cagır();
+
+            cbx_hesaplar.SelectedIndex = 0;
+            Hesap_Bakiye();
+            IslemSıra();
+            PanelChange(pnl_islemler, pnl_menu);
+            PanelChange(pnl_islemler, pnl_rapor);
+        }
+
+        public void lbl_hesapcizgi_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        public void tsm_parayatır_Click(object sender, EventArgs e)
+        {
+            lbl_hesapcizgi.AutoSize = false;
+
+            lbl_hesapcizgi.Width = 600;
+
+            lbl_hesapcizgi.Height = 2;
+
+            lbl_hesapcizgi.BorderStyle = BorderStyle.Fixed3D;
+
+            IslemSıraParametre("2");
+            HesapTemizle();
+            hesap_Cagır();
+
+            cbx_hesaplar.SelectedIndex = 0;
+            Hesap_Bakiye();
+            IslemSıra();
+            PanelChange(pnl_islemler, pnl_menu);
+            PanelChange(pnl_islemler, pnl_rapor);
+        }
+
+        public void tsm_hesabahavale_Click(object sender, EventArgs e)
+        {
+            lbl_hesapcizgi.AutoSize = false;
+
+            lbl_hesapcizgi.Width = 600;
+
+            lbl_hesapcizgi.Height = 2;
+
+            lbl_hesapcizgi.BorderStyle = BorderStyle.Fixed3D;
+
+            IslemSıraParametre("1");
+            HesapTemizle();
+            hesap_Cagır();
+
+            cbx_hesaplar.SelectedIndex = 0;
+            Hesap_Bakiye();
+            IslemSıra();
+            PanelChange(pnl_islemler, pnl_menu);
+            PanelChange(pnl_islemler, pnl_rapor);
+            
+        }
+
+        private void tp_havale_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            IslemSıra();
+
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Hesap_Bakiye();
+        }
+
+        private void txt_paracek_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar);
+        }
+
+        private void btn_paracek_Click(object sender, EventArgs e)
+        {
+            bakiye -= Convert.ToDouble(txt_paracek.Text);
+
+            if (bakiye<=750 && bakiye>=0 && Convert.ToDouble(lbl_kullanıcıhesapbakiye.Text)>=0)
+            {
+                double kullanici_bakiye = Convert.ToDouble(lbl_kullanıcıhesapbakiye.Text);
+
+                kullanici_bakiye -= Convert.ToDouble(txt_paracek.Text);
+
+                double gider = Convert.ToDouble(lbl_gider.Text);
+
+                gider += Convert.ToDouble(txt_paracek.Text);
+
+
+                
+
+
+                SqlCommand hareket_para_cekme = new SqlCommand(@"INSERT INTO Hesap_Hareketi (Hesap_ID,Gelir,Gider,Toplam,Tarih,Tür) Values ((select Hesap_ID FROM Hesaplar WHERE Hesap_No=@p1 ),0,@p2,@p3,GETDATE(),3)", baglan.sql());
+
+                hareket_para_cekme.Parameters.AddWithValue("@p1", cbx_hesaplar.SelectedItem.ToString());
+                hareket_para_cekme.Parameters.AddWithValue("@p2", txt_paracek.Text);
+                hareket_para_cekme.Parameters.AddWithValue("@p3", 0 - Convert.ToDouble(txt_paracek.Text));
+
+                SqlCommand hesapdurum_güncelle = new SqlCommand(@"UPDATE Hesaplar Set Gider=@p1,Bakiye=@p2 where Hesap_No=@p3", baglan.sql());
+
+                hesapdurum_güncelle.Parameters.AddWithValue("@p1", gider);
+                hesapdurum_güncelle.Parameters.AddWithValue("@p2", kullanici_bakiye);
+                hesapdurum_güncelle.Parameters.AddWithValue("@p3", cbx_hesaplar.SelectedItem.ToString());
+
+                MessageBox.Show(string.Concat(cbx_hesaplar.SelectedItem.ToString(), " nolu hesaptan ", txt_paracek.Text, " ₺ para çekilmiştir. !"), "Bilgilendirme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                hareket_para_cekme.ExecuteNonQuery();
+                hesapdurum_güncelle.ExecuteNonQuery();
+
+                txt_paracek.Text = "";
+
+                lbl_bakiye.Text = string.Concat(bakiye.ToString(), " ₺");
+
+               lbl_kullanıcıhesapbakiye.Text = kullanici_bakiye.ToString();
+
+            }
+            else if (bakiye<0)
+            {
+                MessageBox.Show("Günlük Limitiniz Dolmuştur.", "Bilgilendirme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                bakiye+= Convert.ToDouble(txt_paracek.Text);
+            }
+           
+            
+
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            bakiye += Convert.ToDouble(txt_parayatır.Text);
+
+            
+                double kullanici_bakiye = Convert.ToDouble(lbl_kullanıcıhesapbakiye.Text);
+
+                kullanici_bakiye += Convert.ToDouble(txt_parayatır.Text);
+
+                double gelir = Convert.ToDouble(lbl_gelir.Text);
+
+                gelir += Convert.ToDouble(txt_parayatır.Text);
+
+
+
+
+
+                SqlCommand hareket_para_cekme = new SqlCommand(@"INSERT INTO Hesap_Hareketi (Hesap_ID,Gelir,Gider,Toplam,Tarih,Tür) Values ((select Hesap_ID FROM Hesaplar WHERE Hesap_No=@p1 ),@p2,0,@p3,GETDATE(),2)", baglan.sql());
+
+                hareket_para_cekme.Parameters.AddWithValue("@p1", cbx_hesaplar.SelectedItem.ToString());
+                hareket_para_cekme.Parameters.AddWithValue("@p2", txt_parayatır.Text);
+                hareket_para_cekme.Parameters.AddWithValue("@p3", 0 + Convert.ToDouble(txt_parayatır.Text));
+
+                SqlCommand hesapdurum_güncelle = new SqlCommand(@"UPDATE Hesaplar Set Gelir=@p1,Bakiye=@p2 where Hesap_No=@p3", baglan.sql());
+
+                hesapdurum_güncelle.Parameters.AddWithValue("@p1", gelir);
+                hesapdurum_güncelle.Parameters.AddWithValue("@p2", kullanici_bakiye);
+                hesapdurum_güncelle.Parameters.AddWithValue("@p3", cbx_hesaplar.SelectedItem.ToString());
+
+                MessageBox.Show(string.Concat(cbx_hesaplar.SelectedItem.ToString(), " nolu hesaba ", txt_parayatır.Text, " ₺ para yatırılmıştır !"), "Bilgilendirme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                hareket_para_cekme.ExecuteNonQuery();
+                hesapdurum_güncelle.ExecuteNonQuery();
+
+                txt_parayatır.Text = "";
+
+                lbl_bakiye.Text = string.Concat(bakiye.ToString(), " ₺");
+
+               lbl_kullanıcıhesapbakiye.Text = kullanici_bakiye.ToString();
+
+            }
+
+        private void btn_havale_Click(object sender, EventArgs e)
+        {
+
+            SqlCommand hesapno_ara = new SqlCommand(@"Select * from Hesaplar where Hesap_No=@p1", baglan.sql());
+
+            hesapno_ara.Parameters.AddWithValue("@p1", txt_havalehesapno.Text);
+
+            SqlDataReader dr = hesapno_ara.ExecuteReader();
+
+
+            if (dr.Read())
+            {
+                bakiye -= Convert.ToDouble(txt_havalemiktar.Text);
+
+                if (bakiye <= 750 && bakiye > 0 )
+                {
+                    double kullanici_bakiye = Convert.ToDouble(lbl_kullanıcıhesapbakiye.Text);
+
+                    kullanici_bakiye -= Convert.ToDouble(txt_havalemiktar.Text);
+
+                    double gider = Convert.ToDouble(lbl_gider.Text);
+
+                    gider += Convert.ToDouble(txt_havalemiktar.Text);
+
+
+                    double gelir = Convert.ToDouble(lbl_gelir.Text);
+
+                    gelir += Convert.ToDouble(txt_havalemiktar.Text);
+
+
+
+
+                    SqlCommand havale_paracık = new SqlCommand(@"INSERT INTO Hesap_Hareketi (Hesap_ID,Gelir,Gider,Toplam,Tarih,Tür) Values ((select Hesap_ID FROM Hesaplar WHERE Hesap_No=@p1 ),0,@p2,@p3,GETDATE(),1)", baglan.sql());
+
+                    havale_paracık.Parameters.AddWithValue("@p1", cbx_hesaplar.SelectedItem.ToString());
+                    havale_paracık.Parameters.AddWithValue("@p2", txt_havalemiktar.Text);
+                    havale_paracık.Parameters.AddWithValue("@p3", 0 - Convert.ToDouble(txt_havalemiktar.Text));
+
+                    havale_paracık.ExecuteNonQuery();
+
+
+                    SqlCommand havale_parayatır = new SqlCommand(@"INSERT INTO Hesap_Hareketi (Hesap_ID,Gelir,Gider,Toplam,Tarih,Tür) Values ((select Hesap_ID FROM Hesaplar WHERE Hesap_No=@p1 ),@p2,0,@p3,GETDATE(),1)", baglan.sql());
+
+                    havale_parayatır.Parameters.AddWithValue("@p1", txt_havalehesapno.Text);
+                    havale_parayatır.Parameters.AddWithValue("@p2", txt_havalemiktar.Text);
+                    havale_parayatır.Parameters.AddWithValue("@p3", Convert.ToDouble(txt_havalemiktar.Text));
+                    havale_parayatır.ExecuteNonQuery();
+
+
+                    SqlCommand havalecıkıs_durumguncelle = new SqlCommand(@"UPDATE Hesaplar Set Gider=@p1,Bakiye=@p2 where Hesap_No=@p3", baglan.sql());
+
+                    havalecıkıs_durumguncelle.Parameters.AddWithValue("@p1", gider);
+                    havalecıkıs_durumguncelle.Parameters.AddWithValue("@p2", kullanici_bakiye);
+                    havalecıkıs_durumguncelle.Parameters.AddWithValue("@p3", cbx_hesaplar.SelectedItem.ToString());
+
+                    havalecıkıs_durumguncelle.ExecuteNonQuery();
+
+                   // havalecıkıs_durumguncelle.Parameters.Clear();
+
+                    SqlCommand havalegiris_durumguncelle = new SqlCommand(@"UPDATE Hesaplar Set Gelir=@p1,Bakiye=@p2 where Hesap_No=@p3", baglan.sql());
+
+                    havalegiris_durumguncelle.Parameters.AddWithValue("@p1", gelir);
+                    havalegiris_durumguncelle.Parameters.AddWithValue("@p2", kullanici_bakiye);
+                    havalegiris_durumguncelle.Parameters.AddWithValue("@p3", txt_havalehesapno.Text);
+
+                    havalegiris_durumguncelle.ExecuteNonQuery();
+                    
+
+
+
+
+
+                    //MessageBox.Show(string.Concat(cbx_hesaplar.SelectedItem.ToString(), " nolu hesaptan ", txt_paracek.Text, " ₺ para çekilmiştir. !"), "Bilgilendirme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+
+
+                    txt_havalemiktar.Text = "";
+                    txt_havalehesapno.Text = "";
+
+                    lbl_bakiye.Text = string.Concat(bakiye.ToString(), " ₺");
+
+                    lbl_kullanıcıhesapbakiye.Text = string.Concat(kullanici_bakiye.ToString(), " ₺");
+
+                }
+                else if (bakiye <= 0)
+                {
+                    MessageBox.Show("Günlük Limitiniz Dolmuştur.", "Bilgilendirme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    bakiye += Convert.ToDouble(txt_havalemiktar.Text);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Yazmış olduğunuz hesap no bulunamamıştır.", "Bilgilendirme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            }
+        }
+
+        private void tsm_hesap_ozeti_Click(object sender, EventArgs e)
+        {
+
+            PanelChange(pnl_rapor, pnl_menu);
+            PanelChange(pnl_rapor, pnl_islemler);
+
+            comboBox1.Items.Clear();
+
+            #region Hesap_Listele
+            SqlCommand hesap_listele = new SqlCommand(@"select * FROM Hesaplar where Musteri_ID = (select ID from Giris_Bilgisi where Ad=@p1 and Tür=2)", baglan.sql());
+
+            hesap_listele.Parameters.AddWithValue("@p1", lbl_customerno.Text);
+
+            SqlDataReader dr;
+
+            dr = hesap_listele.ExecuteReader();
+
+
+            while (dr.Read())
+            {
+                comboBox1.Items.Add(dr["Hesap_No"]);
+            }
+            #endregion
+
+
+            comboBox1.SelectedIndex = 0;
+
+
+            #region hesap_Bakiye
+            SqlCommand hesap_bakiye = new SqlCommand(@"select * FROM Hesaplar where Musteri_ID = (select ID from Giris_Bilgisi where Ad=@p1  and Tür=2) and Hesap_No=@p2", baglan.sql());
+            hesap_bakiye.Parameters.AddWithValue("@p1", lbl_customerno.Text);
+            hesap_bakiye.Parameters.AddWithValue("@p2", comboBox1.SelectedItem.ToString());
+
+            SqlDataReader dr1;
+
+            dr1 = hesap_bakiye.ExecuteReader();
+
+
+            while (dr1.Read())
+            {
+                lbl_kullanılabilirbakiyerapor.Text = dr1["Bakiye"].ToString();
+                lbl_gider.Text = dr1["Gider"].ToString();
+                lbl_gelir.Text = dr1["Gelir"].ToString();
+            }
+
+
+            string.Concat(lbl_kullanılabilirbakiyerapor.Text, " ₺");
+
+            #endregion
+
+            lbl_bakiyerapor.Text = bakiye.ToString();
+
+            lbl_musteriNoGelecek.Text = lbl_customerno.Text;
+            
+
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            SqlCommand komut = new SqlCommand("Select * From Tur_Raporu where CONVERT(DATE,Tarih) between @p1 and @p2 and Hesap_No=@p3  ", baglan.sql());
+            komut.Parameters.AddWithValue("@p1", dateTimePicker1.Value.Date);
+            komut.Parameters.AddWithValue("@p2", dateTimePicker2.Value.Date);
+            komut.Parameters.AddWithValue("@p3", comboBox1.SelectedItem.ToString());
+
+            SqlDataAdapter da = new SqlDataAdapter(komut);
+            DataTable dt = new DataTable();
+            da.Fill(dt);
+            dataGridView1.DataSource = dt;
+        }
+
+        int tur = 0;
+        private void dataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+            tur = dataGridView1.SelectedCells[0].RowIndex;
+
+            if (dataGridView1.Rows[tur].Cells[1].Value.ToString()=="1")
+            {
+                MessageBox.Show("Havale İşlemi Yapılmış","Bilgi",MessageBoxButtons.OK,MessageBoxIcon.Information);
+            }
+            else if (dataGridView1.Rows[tur].Cells[1].Value.ToString() == "2")
+            {
+                MessageBox.Show("Para Yatırma İşlemi Yapılmış", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show("Para Çekme İşlemi Yapılmış", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            }
+        }
+
+        public void tsm_paracek_VisibleChanged(object sender, EventArgs e)
+        {
+
+        }
+    }
+}
