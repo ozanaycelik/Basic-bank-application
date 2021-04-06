@@ -1,0 +1,197 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Data.SqlClient;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Banka_Otomasyonu
+{
+    public partial class frm_giris : Form
+    {
+        public frm_giris()
+        {
+            InitializeComponent();
+        }
+
+        Connection connect = new Connection();
+
+        
+        //Sadece çarpı işareti için Controlboxta üst kısmın pozisyon bilgisini değiştiriyoruz.
+        #region form çıkış!
+        void Reposition()
+        {
+            var topDelta = 12; 
+            var leftDelta = 3;
+            if (this.Bounds.Contains(MousePosition))
+            {
+                if (this.FormBorderStyle != System.Windows.Forms.FormBorderStyle.SizableToolWindow)
+                {
+                    this.Location = new Point(this.Location.X - leftDelta, this.Location.Y - topDelta);
+                    this.ControlBox = true;
+                    this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+                }
+            }
+            else
+            {
+                if (this.FormBorderStyle == System.Windows.Forms.FormBorderStyle.SizableToolWindow)
+                {
+                    this.Location = new Point(this.Location.X + leftDelta, this.Location.Y + topDelta);
+                    this.ControlBox = false;
+                    this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+                }
+            }
+        }
+        #endregion
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+            //Icon.Dispose();
+           Reposition();
+
+            rbt_kullanici_giris.Checked = true;
+
+            
+
+        }
+
+        public void PanelChange(Panel open, Panel close)
+        {
+            open.Visible = true;
+            close.Visible = false;
+        }
+
+
+        private void rbt_Musteri_CheckedChanged(object sender, EventArgs e)
+        {
+            PanelChange(pnl_musteri, pnl_kullanici);
+            lbl_sifreunut.Visible = false;
+
+        }
+
+        private void rbt_kullanici_giris_CheckedChanged(object sender, EventArgs e)
+        {
+            PanelChange(pnl_kullanici, pnl_musteri);
+            lbl_sifreunut.Visible = true;
+
+            
+        }
+
+        private void lbl_iptal_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            
+            PanelChange(pnl_giris, pnl_sifre_değiştir);
+        }
+
+        private void pnl_sifre_değiştir_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void lbl_sifreunut_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            PanelChange(pnl_sifre_değiştir, pnl_giris);
+        }
+
+        private void btn_giris_kullanici_Click(object sender, EventArgs e)
+        {
+
+        }
+        private void btn_sifresıfırla_Click(object sender, EventArgs e)
+        {
+
+            SqlCommand ara = new SqlCommand(@"Select * from Giris_Bilgisi where Ad=@p1", connect.sql());
+
+            ara.Parameters.AddWithValue("@p1", txt_kullanici_sifresıfırla.Text);
+            SqlDataReader dr = ara.ExecuteReader();
+
+            if (dr.Read())
+            {
+                SqlCommand sifre_sıfırla = new SqlCommand(@"Update Giris_Bilgisi set Sifre='' where Ad=@p1",connect.sql());
+
+                sifre_sıfırla.Parameters.AddWithValue("@p1", txt_kullanici_sifresıfırla.Text);
+
+                sifre_sıfırla.ExecuteNonQuery();
+
+                MessageBox.Show("Şifreniz Sıfırlanmıştır !", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                PanelChange(pnl_giris, pnl_sifre_değiştir);
+            }
+            else
+            {
+                MessageBox.Show("Kullanıcı adı bulunamadı !", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+
+           
+
+        }
+
+        private void pnl_giris_Paint(object sender, PaintEventArgs e)
+        {
+            rbt_Musteri.Checked = true;
+        }
+
+        private void btn_giris_Click(object sender, EventArgs e)
+        {
+
+
+            //rbt_kullanici_giris.Checked = true;
+
+            if (rbt_kullanici_giris.Checked == true)
+            {
+
+                SqlCommand kontrol1 = new SqlCommand("SELECT * FROM Giris_Bilgisi where Tür=1 and Ad=@p1 and Sifre=@p2", connect.sql());
+
+                kontrol1.Parameters.AddWithValue("@p1", txt_kullanici_adi.Text);
+
+                kontrol1.Parameters.AddWithValue("@p2", txt_kullanicisifre.Text);
+
+                SqlDataReader dr = kontrol1.ExecuteReader();
+
+                if (dr.Read())
+                {
+                    Cus_form userform = new Cus_form();
+
+                    userform.ShowDialog();
+
+                }
+                else
+                {
+                    MessageBox.Show("Hatalı numara ya da Şifre", "Uyarı !", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                }
+
+                
+            }
+
+            else
+            {
+                SqlCommand kontrol = new SqlCommand("SELECT * FROM Giris_Bilgisi where Tür=2 and Ad=@p1", connect.sql());
+
+                kontrol.Parameters.AddWithValue("@p1", txt_musterino.Text);
+                SqlDataReader dr = kontrol.ExecuteReader();
+
+                if (dr.Read())
+                {
+                    btn_parayatir cusform = new btn_parayatir();
+
+                    cusform.customerno = txt_musterino.Text;
+
+                    cusform.ShowDialog();
+
+                }
+                else
+                {
+                    MessageBox.Show("Hatalı numara !", "Uyarı !", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                }
+
+            }
+
+        }
+
+  
+    }
+}
